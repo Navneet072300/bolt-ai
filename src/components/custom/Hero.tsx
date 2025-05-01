@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 import Lookup from "@/data/Lookup";
 import React, { useContext, useState } from "react";
