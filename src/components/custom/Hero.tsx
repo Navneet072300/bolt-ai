@@ -1,10 +1,19 @@
 "use client";
 import Lookup from "@/data/Lookup";
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { ArrowRight, Link } from "lucide-react";
+import { MessagesContext } from "@/context/MessageContext";
 
 const Hero = () => {
   const [userInput, setUserInput] = useState<string>("");
+  const { messages, setMessages } = useContext(MessagesContext);
+
+  const onGenerate = (input: string) => {
+    setMessages({
+      role: "user",
+      content: input,
+    });
+  };
 
   return (
     <div className="flex flex-col items-center mt-36 xl:mt-52 gap-2">
@@ -19,7 +28,10 @@ const Hero = () => {
             className="outline-none bg-transparent w-full h-32 max-h-56 resize"
           />
           {userInput && (
-            <ArrowRight className="bg-blue-500 p-2 h-10 w-10 rounded-md cursor-pointer" />
+            <ArrowRight
+              onClick={() => onGenerate(userInput)}
+              className="bg-blue-500 p-2 h-10 w-10 rounded-md cursor-pointer"
+            />
           )}
         </div>
         <div className="">
@@ -33,6 +45,7 @@ const Hero = () => {
             className="p-1 px-2 border rounded-full text-sm
           text-gray-400 hover:text-white cursor-pointer transition transform-3di"
             key={index}
+            onClick={() => onGenerate(suggestion)}
           >
             {suggestion}
           </h2>

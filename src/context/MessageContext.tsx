@@ -4,7 +4,7 @@ import { createContext } from "react";
 // Define the type for your messages context
 interface MessagesContextType {
   messages: any;
-  setMessages: React.Dispatch<React.SetStateAction<any>> | undefined;
+  setMessages: any;
 }
 
 // Provide a default value that matches the type
