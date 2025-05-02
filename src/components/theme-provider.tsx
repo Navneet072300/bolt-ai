@@ -11,7 +11,6 @@ import { Id } from "../../convex/_generated/dataModel";
 
 interface User {
   _id: Id<"user">;
-  _creationTime: number;
   picture: string;
   name: string;
   email: string;
