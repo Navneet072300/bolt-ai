@@ -8,4 +8,5 @@ export default defineSchema({
     picture: v.string(),
     uid: v.string(),
   }),
+  workspace: defineTable,
 });
