@@ -8,5 +8,9 @@ export default defineSchema({
     picture: v.string(),
     uid: v.string(),
   }),
-  workspace: defineTable,
+  workspace: defineTable({
+    message: v.any(),
+    fileData: v.optional(v.any()),
+    user: v.id("user"),
+  }),
 });
