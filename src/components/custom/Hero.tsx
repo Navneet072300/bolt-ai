@@ -6,22 +6,32 @@ import { ArrowRight, Link } from "lucide-react";
 import { MessagesContext } from "@/context/MessageContext";
 import { UserDetailContext } from "@/context/UserDetailContext";
 import SignInDialog from "./SignInDialog";
+import { useMutation } from "convex/react";
+import { api } from "../../../convex/_generated/api";
 
 const Hero = () => {
   const [userInput, setUserInput] = useState<string>("");
   const { messages, setMessages } = useContext(MessagesContext);
   const { userDetail, setUserDetail } = useContext(UserDetailContext);
   const [openDialog, setOpenDialog] = useState(false);
+  const CreateWorkspace = useMutation(api.workspace.CreateWorkspace);
 
-  const onGenerate = (input: string) => {
+  const onGenerate = async (input: string) => {
     if (!userDetail?.name) {
       setOpenDialog(true);
       return;
     }
 
-    setMessages({
+    const msg = {
       role: "user",
       content: input,
+    };
+
+    setMessages(msg);
+
+    const workspaceId = await CreateWorkspace({
+      user: userDetail._id,
+      message: [msg],
     });
   };
 
