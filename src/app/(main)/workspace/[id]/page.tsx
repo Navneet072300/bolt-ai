@@ -1,4 +1,5 @@
 import ChatView from "@/components/custom/ChatView";
+import CodeView from "@/components/custom/CodeView";
 
 const WorkspacePage = () => {
   return (
@@ -6,7 +7,7 @@ const WorkspacePage = () => {
       <div className="grid grid-cols-1 md:grid-cols-3">
         <ChatView />
         <div className="col-span-2">
-          <ChatView />
+          <CodeView />
         </div>
       </div>
     </div>
