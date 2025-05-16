@@ -8,6 +8,7 @@ import { UserDetailContext } from "@/context/UserDetailContext";
 import SignInDialog from "./SignInDialog";
 import { useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
+import { useRouter } from "next/navigation";
 
 const Hero = () => {
   const [userInput, setUserInput] = useState<string>("");
@@ -15,6 +16,7 @@ const Hero = () => {
   const { userDetail, setUserDetail } = useContext(UserDetailContext);
   const [openDialog, setOpenDialog] = useState(false);
   const CreateWorkspace = useMutation(api.workspace.CreateWorkspace);
+  const router = useRouter();
 
   const onGenerate = async (input: string) => {
     if (!userDetail?.name) {
@@ -33,6 +35,7 @@ const Hero = () => {
       user: userDetail._id,
       message: [msg],
     });
+    router.push(`/workspace/${workspaceId}`);
   };
 
   return (
