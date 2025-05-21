@@ -5,8 +5,28 @@ export async function POST(req: Request) {
   try {
     const { prompt } = await req.json();
 
-    const result = await main(prompt); // This now returns full response
-    return NextResponse.json({ result });
+    if (!prompt) {
+      return NextResponse.json(
+        { error: "Prompt is required" },
+        { status: 400 }
+      );
+    }
+
+    const rawResult = await main(prompt);
+
+    let plainText = rawResult;
+    try {
+      const parsed = JSON.parse(rawResult);
+      if (parsed.result) plainText = parsed.result;
+    } catch {
+      // If parsing fails, just keep rawResult as is
+    }
+
+    // Return plain text directly, not wrapped in JSON
+    return new NextResponse(plainText, {
+      status: 200,
+      headers: { "Content-Type": "text/plain" },
+    });
   } catch (error) {
     console.error("Error in AI response:", error);
     return NextResponse.json(

@@ -1,37 +1,28 @@
-import { GoogleGenAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY!,
-});
+export async function main(prompt: string): Promise<string> {
+  const ai = new GoogleGenAI({
+    apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY!,
+  });
 
-export async function main(
-  prompt: string,
-  options: { temperature?: number; maxTokens?: number } = {}
-) {
+  const model = "gemini-2.0-flash";
   const config = {
     responseMimeType: "text/plain",
-    temperature: options.temperature || 0.7,
-    maxOutputTokens: options.maxTokens || 1000,
   };
 
-  const model = "gemini-2.5-pro-preview-05-06";
-  const contents = [{ role: "user", parts: [{ text: prompt }] }];
+  const contents = [
+    {
+      role: "user",
+      parts: [{ text: prompt }],
+    },
+  ];
 
-  try {
-    const stream = await ai.models.generateContentStream({
-      model,
-      config,
-      contents,
-    });
+  const result = await ai.models.generateContent({
+    model,
+    config,
+    contents,
+  });
 
-    let finalText = "";
-    for await (const chunk of stream) {
-      finalText += chunk.text;
-    }
-
-    return finalText;
-  } catch (error) {
-    console.error("Error generating AI content:", error);
-    throw new Error("Failed to generate AI response");
-  }
+  const text = result?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+  return text;
 }

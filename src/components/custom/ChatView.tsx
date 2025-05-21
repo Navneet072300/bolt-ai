@@ -1,10 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useConvex } from "convex/react";
 import { useParams } from "next/navigation";
 import { api } from "../../../convex/_generated/api";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useState, useRef, useCallback } from "react";
 import { Id } from "../../../convex/_generated/dataModel";
 import { MessagesContext } from "@/context/MessageContext";
 import Color from "@/data/Color";
@@ -30,26 +29,30 @@ const ChatView = () => {
   const [userInput, setUserInput] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
 
+  const bottomRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (id) {
       GetWorkspaceData(id as Id<"workspace">);
     }
   }, [id]);
 
-  const GetWorkspaceData = async (workspaceId: Id<"workspace">) => {
-    try {
-      const result = await convex.query(api.workspace.GetWorkspaceData, {
-        workspaceId,
-      });
-      setMessages(result?.message || []);
-    } catch (err) {
-      console.error("Failed to fetch workspace data:", err);
-      toast.error("Failed to load chat history");
-    }
-  };
+  const GetWorkspaceData = useCallback(
+    async (workspaceId: Id<"workspace">) => {
+      try {
+        const result = await convex.query(api.workspace.GetWorkspaceData, {
+          workspaceId,
+        });
+        setMessages(result?.message || []);
+      } catch (err) {
+        console.error("Failed to fetch workspace data:", err);
+        toast.error("Failed to load chat history");
+      }
+    },
+    [convex, setMessages]
+  );
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const GetAiResponse = async () => {
+  const GetAiResponse = useCallback(async () => {
     setLoading(true);
     const prompt = JSON.stringify(messages) + Prompt.CHAT_PROMPT;
 
@@ -66,16 +69,21 @@ const ChatView = () => {
       if (!reader) throw new Error("No response body");
 
       let aiMessage = "";
+
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
+
         aiMessage += new TextDecoder().decode(value);
-        setMessages((prev: Message[]) => [
-          ...prev.filter(
-            (msg) => msg.role !== "ai" || msg.content !== aiMessage
-          ), // Avoid duplicates
-          { role: "ai", content: aiMessage },
-        ]);
+
+        setMessages((prev: Message[]) => {
+          const last = prev[prev.length - 1];
+          if (last?.role === "ai") {
+            return [...prev.slice(0, -1), { role: "ai", content: aiMessage }];
+          } else {
+            return [...prev, { role: "ai", content: aiMessage }];
+          }
+        });
       }
 
       setLoading(false);
@@ -84,17 +92,20 @@ const ChatView = () => {
       toast.error("Failed to get AI response");
       setLoading(false);
     }
-  };
+  }, [messages, setMessages]);
 
   useEffect(() => {
-    if (messages.length > 0 && messages[messages.length - 1].role === "user") {
+    if (messages?.length > 0 && messages[messages.length - 1].role === "user") {
       GetAiResponse();
     }
   }, [messages, GetAiResponse]);
 
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
   const handleSend = () => {
     if (!userInput.trim()) return;
-
     setMessages((prev: Message[]) => [
       ...prev,
       { role: "user", content: userInput.trim() },
@@ -109,19 +120,29 @@ const ChatView = () => {
     }
   };
 
+  const onGenerate = (input: string) => {
+    setMessages((prev: Message[]) => [
+      ...prev,
+      {
+        role: "user",
+        content: input,
+      },
+    ]);
+  };
+
   return (
     <div className="relative h-[85vh] flex flex-col">
-      <div className="flex-1 overflow-y-scroll px-4">
-        {messages.length === 0 ? (
+      <div className="flex-1 overflow-y-scroll px-4 no-scrollbar">
+        {messages?.length === 0 ? (
           <div className="text-gray-400 text-center mt-10">
             No messages yet. Start the conversation!
           </div>
         ) : (
-          messages.map((msg: Message, index: number) => (
+          messages?.map((msg: Message, index: number) => (
             <div
               key={index}
-              className={`p-3 rounded-lg mb-2 flex gap-2 items-start ${
-                msg.role === "user" ? "justify-end" : "justify-start"
+              className={`p-3 rounded-lg mb-2 flex gap-2 items-start leading-7 ${
+                msg.role === "user" ? "justify-start" : "justify-end"
               }`}
               style={{ backgroundColor: Color.CHAT_BACKGROUND }}
             >
@@ -138,6 +159,7 @@ const ChatView = () => {
             </div>
           ))
         )}
+
         {loading && (
           <div
             className="p-3 rounded-lg mb-2 flex gap-2 items-center"
@@ -147,26 +169,27 @@ const ChatView = () => {
             <h2 className="text-white">Generating Response...</h2>
           </div>
         )}
+
+        <div ref={bottomRef} />
       </div>
 
       <div className="bg-[#101923] p-5 border rounded-xl max-w-xl w-full mt-3 mx-auto">
         <div className="flex gap-3 items-end">
           <textarea
+            id="chat-input"
+            aria-label="Chat input area"
+            aria-multiline="true"
             value={userInput}
             onChange={(e) => setUserInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={Lookup.INPUT_PLACEHOLDER}
             className="outline-none bg-transparent w-full h-32 max-h-56 resize-none text-white"
-            aria-label="Chat input"
           />
           {userInput && (
-            <button
-              onClick={handleSend}
+            <ArrowRight
+              onClick={() => onGenerate(userInput)}
               className="bg-blue-500 p-2 h-10 w-10 rounded-md cursor-pointer hover:bg-blue-600 transition"
-              aria-label="Send message"
-            >
-              <ArrowRight />
-            </button>
+            />
           )}
         </div>
         <div className="mt-2 flex justify-end">
